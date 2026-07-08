@@ -1,0 +1,6 @@
+# outputs.tf - VPC
+
+
+
+
+
