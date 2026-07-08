@@ -1,5 +1,0 @@
-# outputs.tf - S3
-
-
-
-

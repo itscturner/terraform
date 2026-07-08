@@ -1,6 +1,0 @@
-# variables.tf - EC2
-
-
-
-
-
