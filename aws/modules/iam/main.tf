@@ -17,7 +17,6 @@ resource "aws_iam_role" "ec2" {
 }
 
 resource "aws_iam_policy" "s3" {
-
   name = "ec2-s3-policy"
 
   policy = jsonencode({
@@ -39,7 +38,6 @@ resource "aws_iam_policy" "s3" {
 }
 
 resource "aws_iam_role_policy_attachment" "attach" {
-
   role       = aws_iam_role.ec2.name
   policy_arn = aws_iam_policy.s3.arn
 }
@@ -47,4 +45,3 @@ resource "aws_iam_role_policy_attachment" "attach" {
 resource "aws_iam_instance_profile" "profile" {
   role = aws_iam_role.ec2.name
 }
-
