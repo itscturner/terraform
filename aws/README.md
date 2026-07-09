@@ -1,7 +1,7 @@
 AWS
 ===
 
-This Terraform project creates AWS EC2 instances with a S3 bucket for storage.
+This Terraform project creates AWS EC2 instances with a S3 Bucket for storage.
 
 Architecture
 ---
@@ -19,12 +19,12 @@ Architecture
      │            │            │
      └────────────┴────────────┘
            Security Group
-          (all instances can
+          (All instances can
          communicate internally)
                  │
          IAM Instance Profile
                  │
-             Shared S3 Bucket
+           Shared S3 Bucket
 ```
 
 Project Structure
@@ -61,20 +61,40 @@ aws/
 │── README.md              # Documentation
 ```
 
+Prerequisites
+---
+
+Before deploying this project, ensure you have the following installed:
+
+#### **Install Terraform**
+- Download Terraform from the official site: [Terraform Download](https://www.terraform.io/downloads)
+- Install it by following the instructions for your OS.
+- Verify installation by running:
+  ```sh
+  terraform -version
+  ```
+
+#### **Configure AWS CLI**
+- Install AWS CLI: [AWS CLI Installation](https://aws.amazon.com/cli/)
+- Configure it with your AWS credentials:
+  ```sh
+  aws configure
+  ```
+
 Deployment Guide
 ---
 
-Initialize Terraform
+**Initialize Terraform**
 ```
 terraform init
 ```
 
-Plan Deployment
+**Plan Deployment**
 ```
 terraform plan
 ```
 
-Apply Configuration
+**Apply Configuration**
 ```
 terraform apply -auto-approve
 ```
@@ -82,12 +102,12 @@ terraform apply -auto-approve
 Outputs
 ---
 
-Instance IDs
+**Instance IDs**
 ```
 instances = module.ec2.instance_ids
 ```
 
-S3 Bucket Name
+**S3 Bucket Name**
 ```
 bucket = module.s3.bucket_name
 ```
