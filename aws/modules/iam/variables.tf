@@ -1,2 +1,3 @@
-variable "bucket_arn" {}
-
+variable "bucket_arn" {
+  description = "S3 Bucket ARN"
+}
