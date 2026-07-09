@@ -1,7 +1,7 @@
 AWS
 ===
 
-This Terraform project creates AWS EC2 instances with a S3 Bucket for storage.
+This Terraform project automates the deployment of a scalable infrastructure on Amazon Web Services (AWS). It leverages Infrastructure as Code (IaC) to provision a dynamic pool of Amazon Elastic Compute Cloud (EC2) instances integrated with a centralized Amazon Simple Storage Service (S3) bucket for unified data storage.
 
 Architecture
 ---
