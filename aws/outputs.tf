@@ -7,4 +7,3 @@ output "bucket" {
   description = "S3 Bucket Name"
   value       = module.s3.bucket_name
 }
-
