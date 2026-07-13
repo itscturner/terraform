@@ -52,12 +52,12 @@ The infrastructure runs on the latest **Red Hat Enterprise Linux 8 (RHEL 8)** AM
 ```text
 aws-elastic/
 ├── data.tf               # Dynamic data collection (Latest RHEL 8 AMI, VPC info, subnets, AZs)
+├── inventory.yml         # Dynamic inventory plugin entry point configuration for Ansible
 ├── locals.tf             # Node configurations grouped by role (Counts, instance types, network rules)
 ├── main.tf               # Central backbone config (S3 bucket, IAM profiles, ALB, and module injection)
 ├── providers.tf          # AWS and Ansible Provider definitions and version constraints
 ├── variables.tf          # Global configuration variable switches
 ├── outputs.tf            # Structured cluster entry point diagnostics and endpoint configurations
-├── inventory.yml         # Dynamic inventory plugin entry point configuration for Ansible
 └── modules/
     └── ec2/              # Reusable Auto Scaling Group & Launch Template cluster module engines
         ├── main.tf
