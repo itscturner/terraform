@@ -1,97 +1,63 @@
-variable "instances" {
-  description = "Map of Elasticsearch nodes to create"
-
-  type = map(object({
-
-    name = string
-
-    role = string
-
-    node_type = string
-
-    instance_type = string
-
-    volume_size = number
-
-    subnet_index = number
-
-    ingress = list(object({
-
-      description = string
-
-      from_port = number
-
-      to_port = number
-
-      protocol = string
-
-      cidr = string
-
-    }))
-
-  }))
-}
-
-
-
-variable "ami" {
-
-  description = "AMI ID used for EC2 instances"
-
-  type = string
-
-}
-
-
-
-variable "subnet_ids" {
-
-  description = "List of private subnet IDs across availability zones"
-
-  type = list(string)
-
-}
-
-
-
-variable "instance_profile" {
-
-  description = "IAM instance profile attached to EC2 instances"
-
-  type = string
-
-}
-
-
-
-variable "security_groups" {
-
-  description = "Security groups mapped by node type"
-
-  type = map(string)
-
-}
-
-
+# variables.tf - AWS Elastic/EC2
 
 variable "key_name" {
-
-  description = "EC2 key pair name"
-
-  type = string
-
-  default = null
-
+  description = "The target key pair identifier authorized to authenticate SSH terminal requests."
+  type        = string
 }
 
+variable "node_role" {
+  description = "The specific role of the node (e.g., elasticsearch-master, elasticsearch-data, kibana)."
+  type        = string
+}
 
+variable "instance_type" {
+  description = "EC2 instance type to deploy."
+  type        = string
+}
+
+variable "instance_count" {
+  description = "Number of EC2 instances to deploy."
+  type        = number
+}
+
+variable "ami_id" {
+  description = "The latest RHEL 8 AMI ID."
+  type        = string
+}
+
+variable "subnet_ids" {
+  description = "The list of private subnet IDs distributed across multiple AZs."
+  type        = list(string)
+}
+
+variable "security_group_ids" {
+  description = "Associated firewall security group IDs."
+  type        = list(string)
+}
+
+variable "instance_profile" {
+  description = "The IAM instance profile for cluster metadata access."
+  type        = string
+}
 
 variable "root_volume_size" {
+  description = "Size of the OS root disk in GiB."
+  type        = number
+}
 
-  description = "Root EBS volume size"
+variable "ebs_volume_size" {
+  description = "Size of the dedicated secondary EBS data disk in GiB."
+  type        = number
+}
 
-  type = number
+variable "ebs_iops" {
+  description = "The amount of provisioned IOPS. Only valid for gp3, io1, and io2 volumes."
+  type        = number
+  default     = null
+}
 
-  default = 50
-
+variable "ebs_throughput" {
+  description = "The throughput to provision for a gp3 volume in MiB/s."
+  type        = number
+  default     = null
 }
