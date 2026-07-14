@@ -1,69 +1,32 @@
+# locals.tf - AWS Elastic
+
 locals {
+  node_roles = {
+    "elasticsearch-master" = {
+      instance_count = var.elasticsearch_master_instance_count
+      instance_type  = var.elasticsearch_master_instance_type
+      root_vol_size  = 30
+      ebs_vol_size   = 50
+      ebs_iops       = null # Uses AWS Default baseline (3000)
+      ebs_throughput = null # Uses AWS Default baseline (125)
+    }
 
-  /*
-    Flatten Elasticsearch nodes into individual instances.
+    "elasticsearch-data" = {
+      instance_count = var.elasticsearch_data_instance_count
+      instance_type  = var.elasticsearch_data_instance_type
+      root_vol_size  = 30
+      ebs_vol_size   = 500
+      ebs_iops       = 6000 # Scaled IOPS for high indexing rates
+      ebs_throughput = 250  # Scaled Throughput (MB/s) for heavy shard recoveries
+    }
 
-    Each instance receives an AZ index so the EC2 module
-    can distribute nodes across the three availability zones.
-  */
-
-  instances = merge(
-    [
-      for node_type, node in local.node_roles :
-      {
-        for index in range(node.count) :
-
-        "${node_type}-${index + 1}" = {
-
-          name = "${node_type}-${index + 1}"
-
-          role = node.role
-
-          node_type = node_type
-
-          instance_type = node.instance_type
-
-          volume_size = node.volume_size
-
-          ingress = node.ingress
-
-
-          /*
-            Distribute nodes evenly:
-
-            master-1 -> AZ 0
-            master-2 -> AZ 1
-            master-3 -> AZ 2
-
-            data-1 -> AZ 0
-            data-2 -> AZ 1
-            data-3 -> AZ 2
-            etc.
-          */
-
-          subnet_index = index % length(var.availability_zones)
-
-        }
-      }
-    ]...
-  )
-
-
-
-  /*
-    Security groups remain unchanged.
-    Each node type receives its own SG.
-  */
-
-  security_groups = {
-    for node_type, node in local.node_roles :
-
-    node_type => {
-
-      name = "${var.project_name}-${node_type}-sg"
-
-      ingress = node.ingress
-
+    "kibana" = {
+      instance_count = var.kibana_instance_count
+      instance_type  = var.kibana_instance_type
+      root_vol_size  = 30
+      ebs_vol_size   = 20
+      ebs_iops       = null # Uses AWS Default baseline (3000)
+      ebs_throughput = null # Uses AWS Default baseline (125)
     }
   }
 }
