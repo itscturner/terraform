@@ -1,48 +1,48 @@
-output "vpc_id" {
-  description = "ID of the created VPC"
-  value       = aws_vpc.main.id
-}
+# outputs.tf - AWS Elastic
 
-
-output "private_subnet_id" {
-  description = "Private subnet ID where Elasticsearch nodes are deployed"
-  value       = aws_subnet.private.id
-}
-
-
-output "elasticsearch_nodes" {
-  description = "Elasticsearch EC2 instance information"
+output "all_node_instance_ids" {
+  description = "A grouped mapping of all created EC2 Instance IDs by their role."
   value = {
-    for name, instance in module.ec2.instances :
-    name => {
-      id         = instance.id
-      private_ip = instance.private_ip
-      role       = instance.role
-    }
+    for role, execution_block in module.ec2 : role => execution_block.instance_ids
   }
 }
 
-
-output "kibana_url" {
-  description = "Kibana access URL"
-  value = length([
-    for name, instance in module.ec2.instances :
-    instance
-    if instance.role == "kibana"
-  ]) > 0 ? "http://<kibana-private-ip>:5601" : null
+output "elasticsearch_master_ips" {
+  description = "Private IP addresses assigned to the Elasticsearch Master nodes."
+  value       = try(module.ec2["master"].private_ips, [])
 }
 
-
-output "security_groups" {
-  description = "Created security groups"
-  value = {
-    for name, sg in aws_security_group.nodes :
-    name => sg.id
-  }
+output "elasticsearch_data_ips" {
+  description = "Private IP addresses assigned to the Elasticsearch Data nodes."
+  value       = try(module.ec2["data"].private_ips, [])
 }
 
+output "elasticsearch_alb_dns_name" {
+  description = "The internal DNS endpoint to route Elasticsearch HTTP data client traffic to."
+  value       = aws_lb.elasticsearch_internal_alb.dns_name
+}
 
-output "iam_instance_profile" {
-  description = "EC2 instance profile attached to nodes"
-  value       = aws_iam_instance_profile.ec2.name
+output "elasticsearch_api_endpoint" {
+  description = "The internal URL for Elasticsearch API data ingestion."
+  value       = "http://${aws_route53_record.elasticsearch_api_dns.name}"
+}
+
+output "elasticsearch_snapshot_bucket_arn" {
+  description = "The target AWS Resource Name tracking your production backup bucket cluster."
+  value       = aws_s3_bucket.elastic_snapshots.arn
+}
+
+output "kibana_ips" {
+  description = "Private IP addresses assigned to the Kibana nodes."
+  value       = try(module.ec2["kibana"].private_ips, [])
+}
+
+output "kibana_alb_dns_name" {
+  description = "The internal DNS endpoint utilized by end-users to load the Kibana UI."
+  value       = aws_lb.kibana_internal_alb.dns_name
+}
+
+output "kibana_endpoint" {
+  description = "The internal URL to access the Kibana UI."
+  value       = "http://${aws_route53_record.kibana_dns.name}"
 }
