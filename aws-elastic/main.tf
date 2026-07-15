@@ -152,8 +152,8 @@ module "ec2" {
 
   node_role          = each.key
   instance_count     = each.value.instance_count
-  #ami_id             = data.aws_ami.rhel8_latest.id
-  ami_id             = data.aws_ami.amazon_linux_latest.id
+  ami_id             = data.aws_ami.rhel8_latest.id
+  #ami_id             = data.aws_ami.amazon_linux_latest.id
   instance_type      = each.value.instance_type
   subnet_ids         = aws_subnet.private_subnets[*].id 
   security_group_ids = [aws_security_group.elastic_sg.id]

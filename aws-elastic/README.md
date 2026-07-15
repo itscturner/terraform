@@ -15,11 +15,11 @@ Storage IOPS and throughput are fine-tuned via native `gp3` parameters on the da
  ┌────────────────────────────────────────────────────────────────────────┐
  │                           AWS REGION (VPC)                             │
  │                                                                        │
- │   Internet                                                             │
+ │   Internal VPC Clients (no Internet Gateway / no public ingress)       │
  │   │                                                                    │
- │   ├──► [ Inbound Administrative Traffic — Port 22 (SSH) ]              │
+ │   ├──► [ Administrative Traffic — Port 22 (SSH), VPC CIDR only ]       │
  │   │                                                                    │
- │   └──► [ Inbound Corporate HTTP Clients — Port 80 ]                    │
+ │   └──► [ Internal HTTP Clients — Port 80, VPC CIDR only ]              │
  │        │                                                               │
  │        ├──► Private Hosted Zone: api.elastic.internal                  │
  │        │    │                                                          │
@@ -70,13 +70,13 @@ Storage IOPS and throughput are fine-tuned via native `gp3` parameters on the da
 ### Key Architectural Highlights
 
 * **Dynamic AZ Discovery:** Eliminates hardcoded geography variables by leveraging the `aws_availability_zones` data source to automatically provision subnet boundaries across all healthy AZs in the target region.
-* **Pure Boundary Isolation:** Every layer (Master, Data, and Kibana) has independent Auto Scaling Groups. Compute clusters can safely restart or lose physical instances without disturbing data ingestion or frontend availability.
+* **Pure Boundary Isolation:** Every layer (Master, Data, and Kibana) is provisioned as its own fixed-count set of EC2 instances, sized and counted independently per role via `locals.tf`. There are no Auto Scaling Groups — instance counts are static and changed by updating the relevant `*_instance_count` variable and re-applying.
 * **Internal Routing Security:** All resources live in completely private network spaces. Inbound SSH (`port 22`) and web paths are tightly locked down to internal VPC CIDR traffic.
 * **Dual Internal ALBs:** Isolates data planes by routing system ingestion queries to an Elasticsearch REST API load balancer (`port 9200`) while maintaining a completely separate ALB cluster for front-end Kibana web rendering (`port 5601`).
 * **Split-Horizon Private DNS:** Provisions a Route 53 Private Hosted Zone to translate long AWS balancer endpoints into human-readable corporate aliases (`api.elastic.internal` and `kibana.elastic.internal`).
 * **Optimized Data Layer Storage:** The Elasticsearch data tier utilizes optimized `gp3` EBS variables running at 6,000 IOPS and 250 MB/s to completely eliminate disk indexing write bottlenecks.
 * **Automated Boot Volume Mounting:** Instances execute a base64-encoded cloud-init script on boot to automatically partition secondary NVMe or standard block attachments, apply an `ext4` filesystem layout, write to `/etc/fstab`, and mount cleanly to `/mnt/elastic-data`.
-* **Encrypted Snapshot Plane:** The data layer communicates with Amazon S3 via secure AWS APIs over standard IAM metadata role permissions rather than unsecure static files containing raw access tokens.
+* **Encrypted Snapshot Plane:** The data layer is authorized to read/write the S3 snapshot bucket via its IAM instance profile role rather than static access keys. Note: the private subnets currently have no NAT Gateway or S3 VPC Endpoint, so there is no network path to S3 yet — one of those must be added before snapshot traffic can actually reach the bucket.
 
 ---
 
@@ -88,7 +88,7 @@ aws-elastic/
 ├── locals.tf              # Node configurations grouped by role (instance counts, instance types, storage sizes)
 ├── main.tf                # Entrypoint organizing data lookups, network plumbing, ALBs, DNS, and S3
 ├── outputs.tf             # Maps endpoints, IPs, URLs, and Instance IDs
-├── providers.tf           # Provider definitions and version constraints
+├── providers.tf           # AWS provider and Terraform block (no version constraints pinned yet)
 ├── variables.tf           # Global configuration variable switches
 └── modules
     └── ec2/               # Module to create EC2 instances
@@ -208,7 +208,7 @@ terraform destroy
 | Port Boundary     | Protocol | Traffic Scope Source            | Intent and Operations                                           |
 | :---              | :---     | :---                            | :---                                                            |
 | **TCP / `22`**    | SSH      | `var.vpc_cidr` (VPC Space Only) | Secure terminal management access                               |
-| **HTTPS / `443`** | TLS      | `elastic-ec2-cluster-role`      | Secure IAM-driven outbound requests to the S3 Snapshots Bucket  |
+| **HTTPS / `443`** | TLS      | `elastic-ec2-iam-role`          | IAM-authorized outbound requests to the S3 Snapshots Bucket (needs a NAT Gateway or S3 VPC Endpoint — not yet provisioned) |
 | **TCP / `5601`**  | HTTP     | `elastic-kibana-alb-sg`         | Restricts Kibana backend access purely to requests from its ALB |
 | **TCP / `9200`**  | HTTP     | `self` / `elastic-es-alb-sg`    | Ingestion API pipeline query engine access                      |
 | **TCP / `9300`**  | TCP      | `self` (Within `elastic_sg`)    | Isolated Elasticsearch Inter-node Shard Cluster Routing         |
