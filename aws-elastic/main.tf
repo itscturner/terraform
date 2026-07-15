@@ -9,7 +9,7 @@ resource "aws_vpc" "elastic_vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
-  tags                 = {
+  tags = {
     Name = "elastic-vpc"
   }
 }
@@ -19,9 +19,9 @@ resource "aws_subnet" "private_subnets" {
   vpc_id            = aws_vpc.elastic_vpc.id
   cidr_block        = element(var.private_subnet_cidrs, count.index)
   availability_zone = data.aws_availability_zones.available.names[count.index]
-  
-  tags = { 
-    Name = "elastic-private-subnet-${data.aws_availability_zones.available.names[count.index]}" 
+
+  tags = {
+    Name = "elastic-private-subnet-${data.aws_availability_zones.available.names[count.index]}"
   }
 }
 
@@ -75,7 +75,7 @@ resource "aws_security_group" "elastic_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr] 
+    cidr_blocks = [var.vpc_cidr]
   }
 
   ingress {
@@ -150,15 +150,15 @@ module "ec2" {
   source   = "./modules/ec2"
   for_each = local.node_roles
 
-  node_role          = each.key
-  instance_count     = each.value.instance_count
-  ami_id             = data.aws_ami.rhel8_latest.id
+  node_role      = each.key
+  instance_count = each.value.instance_count
+  ami_id         = data.aws_ami.rhel8_latest.id
   #ami_id             = data.aws_ami.amazon_linux_latest.id
   instance_type      = each.value.instance_type
-  subnet_ids         = aws_subnet.private_subnets[*].id 
+  subnet_ids         = aws_subnet.private_subnets[*].id
   security_group_ids = [aws_security_group.elastic_sg.id]
   instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  key_name           = aws_key_pair.ssh_key.key_name 
+  key_name           = aws_key_pair.ssh_key.key_name
   root_volume_size   = each.value.root_vol_size
   ebs_volume_size    = each.value.ebs_vol_size
   ebs_iops           = each.value.ebs_iops
@@ -167,7 +167,7 @@ module "ec2" {
 
 resource "aws_lb" "elasticsearch_internal_alb" {
   name               = "elastic-es-alb"
-  internal           = true 
+  internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.elasticsearch_alb_sg.id]
   subnets            = aws_subnet.private_subnets[*].id
@@ -179,10 +179,17 @@ resource "aws_lb_target_group" "elasticsearch_data_tg" {
   protocol = "HTTP"
   vpc_id   = aws_vpc.elastic_vpc.id
   health_check {
-    path     = "/" 
+    path     = "/"
     port     = "9200"
     protocol = "HTTP"
   }
+}
+
+resource "aws_lb_target_group_attachment" "elasticsearch_data_nodes" {
+  for_each         = toset(module.ec2["elasticsearch-data"].instance_ids)
+  target_group_arn = aws_lb_target_group.elasticsearch_data_tg.arn
+  target_id        = each.value
+  port             = 9200
 }
 
 resource "aws_lb_listener" "es_http_listener" {
@@ -197,7 +204,7 @@ resource "aws_lb_listener" "es_http_listener" {
 
 resource "aws_lb" "kibana_internal_alb" {
   name               = "elastic-kibana-alb"
-  internal           = true 
+  internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.kibana_alb_sg.id]
   subnets            = aws_subnet.private_subnets[*].id
@@ -209,10 +216,17 @@ resource "aws_lb_target_group" "kibana_tg" {
   protocol = "HTTP"
   vpc_id   = aws_vpc.elastic_vpc.id
   health_check {
-    path     = "/status" 
+    path     = "/status"
     port     = "5601"
     protocol = "HTTP"
   }
+}
+
+resource "aws_lb_target_group_attachment" "kibana_nodes" {
+  for_each         = toset(module.ec2["kibana"].instance_ids)
+  target_group_arn = aws_lb_target_group.kibana_tg.arn
+  target_id        = each.value
+  port             = 5601
 }
 
 resource "aws_lb_listener" "kibana_http_listener" {
@@ -227,7 +241,7 @@ resource "aws_lb_listener" "kibana_http_listener" {
 
 resource "aws_route53_zone" "private_zone" {
   name = var.private_domain_name
-  vpc  { vpc_id = aws_vpc.elastic_vpc.id }
+  vpc { vpc_id = aws_vpc.elastic_vpc.id }
 }
 
 resource "aws_route53_record" "kibana_dns" {
@@ -266,13 +280,13 @@ resource "aws_s3_bucket_public_access_block" "elastic_snapshots_block" {
 }
 
 resource "aws_iam_role_policy" "elastic_s3_snapshot_policy" {
-  name   = "elastic-s3-snapshot-policy"
-  role   = aws_iam_role.ec2_role.id
+  name = "elastic-s3-snapshot-policy"
+  role = aws_iam_role.ec2_role.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
-      Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket", "s3:GetBucketLocation"]
+      Effect   = "Allow"
+      Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket", "s3:GetBucketLocation"]
       Resource = [aws_s3_bucket.elastic_snapshots.arn, "${aws_s3_bucket.elastic_snapshots.arn}/*"]
     }]
   })
