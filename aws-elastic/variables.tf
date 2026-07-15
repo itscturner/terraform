@@ -81,5 +81,11 @@ variable "kibana_instance_type" {
 variable "kibana_instance_count" {
   description = "EC2 instance count for the Kibana nodes."
   type        = number
-  default     = 1 
+  default     = 1
+}
+
+variable "ansible_ssh_user" {
+  description = "The SSH login user Ansible should use to connect to the provisioned nodes."
+  type        = string
+  default     = "ec2-user"
 }

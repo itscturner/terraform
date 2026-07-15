@@ -84,12 +84,17 @@ Storage IOPS and throughput are fine-tuned via native `gp3` parameters on the da
 
 ```text
 aws-elastic/
+├── ansible.tf             # Renders a local Ansible inventory file from the provisioned EC2 IPs
 ├── data.tf                # Dynamic data collection (Available AZs, Latest RHEL 8 AMI)
 ├── locals.tf              # Node configurations grouped by role (instance counts, instance types, storage sizes)
 ├── main.tf                # Entrypoint organizing data lookups, network plumbing, ALBs, DNS, and S3
 ├── outputs.tf             # Maps endpoints, IPs, URLs, and Instance IDs
-├── providers.tf           # AWS provider and Terraform block (no version constraints pinned yet)
+├── providers.tf           # AWS + local provider definitions and Terraform block (no version constraints pinned yet)
 ├── variables.tf           # Global configuration variable switches
+├── templates
+│   └── inventory.tftpl    # Ansible inventory template rendered by ansible.tf
+├── ansible
+│   └── inventory.ini      # Generated on `apply` — not committed to source control
 └── modules
     └── ec2/               # Module to create EC2 instances
         ├── main.tf
@@ -190,6 +195,40 @@ Once Terraform finishes successfully, the CLI will return a series of configurat
 ```bash
 terraform output kibana_endpoint
 ```
+
+---
+
+## Ansible Inventory Generation
+
+Every `terraform apply` renders a static Ansible inventory via the `hashicorp/local` provider (`ansible.tf`), grouping each provisioned node's private IP by role:
+
+```ini
+[elasticsearch_master]
+10.0.1.10
+10.0.2.11
+
+[elasticsearch_data]
+10.0.1.20
+
+[kibana]
+10.0.3.5
+
+[elastic_cluster:children]
+elasticsearch_data
+elasticsearch_master
+kibana
+
+[elastic_cluster:vars]
+ansible_user=ec2-user
+```
+
+The file is written to `ansible/inventory.ini` on whichever machine runs `terraform apply` (your laptop, CI runner, bastion, etc.) — it is **not** copied onto the EC2 nodes themselves. Point Ansible at it directly:
+
+```bash
+ansible-playbook -i ansible/inventory.ini your_playbook.yml
+```
+
+The SSH user written into `[elastic_cluster:vars]` comes from `var.ansible_ssh_user` (default `ec2-user`, matching the default login for the RHEL 8 AMI). Because the inventory is a generated artifact tied to the current `apply`, it will go stale if instances are replaced outside Terraform — avoid committing it to source control.
 
 ---
 
