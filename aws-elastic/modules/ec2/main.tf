@@ -52,6 +52,9 @@ resource "aws_ebs_volume" "data_vol" {
   type              = "gp3"
   encrypted         = true
 
+  iops              = var.ebs_iops
+  throughput        = var.ebs_throughput
+
   tags = {
     Name = "elastic-${var.node_role}-data-ebs-${count.index + 1}"
     Role = var.node_role
@@ -63,20 +66,4 @@ resource "aws_volume_attachment" "ebs_att" {
   device_name = "/dev/sdb"
   volume_id   = aws_ebs_volume.data_vol[count.index].id
   instance_id = aws_instance.node[count.index].id
-}
-
-resource "aws_ebs_volume" "data_vol_extra" {
-  count             = var.instance_count
-  availability_zone = aws_instance.node[count.index].availability_zone
-  size              = var.ebs_volume_size
-  type              = "gp3"
-  encrypted         = true
-
-  iops              = var.ebs_iops
-  throughput        = var.ebs_throughput
-
-  tags = {
-    Name = "elastic-${var.node_role}-data-ebs-${count.index + 1}"
-    Role = var.node_role
-  }
 }

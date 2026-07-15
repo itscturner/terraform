@@ -9,12 +9,12 @@ output "all_node_instance_ids" {
 
 output "elasticsearch_master_ips" {
   description = "Private IP addresses assigned to the Elasticsearch Master nodes."
-  value       = try(module.ec2["master"].private_ips, [])
+  value       = try(module.ec2["elasticsearch-master"].private_ips, [])
 }
 
 output "elasticsearch_data_ips" {
   description = "Private IP addresses assigned to the Elasticsearch Data nodes."
-  value       = try(module.ec2["data"].private_ips, [])
+  value       = try(module.ec2["elasticsearch-data"].private_ips, [])
 }
 
 output "elasticsearch_alb_dns_name" {

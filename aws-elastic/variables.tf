@@ -51,7 +51,7 @@ variable "snapshot_bucket_name" {
 variable "elasticsearch_master_instance_type" {
   description = "EC2 instance type for the Elasticsearch Master nodes."
   type        = string
-  default     = "c6i.large" 
+  default     = "t3.micro" #"c6i.large" 
 }
 
 variable "elasticsearch_master_instance_count" {
@@ -63,7 +63,7 @@ variable "elasticsearch_master_instance_count" {
 variable "elasticsearch_data_instance_type" {
   description = "EC2 instance type for the Elasticsearch Data nodes."
   type        = string
-  default     = "r6i.xlarge"
+  default     = "t3.micro" #"r6i.xlarge"
 }
 
 variable "elasticsearch_data_instance_count" {
@@ -75,7 +75,7 @@ variable "elasticsearch_data_instance_count" {
 variable "kibana_instance_type" {
   description = "EC2 instance type for the Kibana nodes."
   type        = string
-  default     = "t3.medium" 
+  default     = "t3.micro" #"t3.medium" 
 }
 
 variable "kibana_instance_count" {

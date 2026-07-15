@@ -122,7 +122,7 @@ resource "aws_iam_role" "ec2_role" {
     Statement = [{
       Action    = "sts:AssumeRole"
       Effect    = "Allow"
-      Principal = { Service = "://amazonaws.com" }
+      Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
 }
@@ -152,11 +152,12 @@ module "ec2" {
 
   node_role          = each.key
   instance_count     = each.value.instance_count
-  ami_id             = data.aws_ami.rhel8_latest.id
+  #ami_id             = data.aws_ami.rhel8_latest.id
+  ami_id             = data.aws_ami.amazon_linux_latest.id
   instance_type      = each.value.instance_type
   subnet_ids         = aws_subnet.private_subnets[*].id 
   security_group_ids = [aws_security_group.elastic_sg.id]
-  instance_profile   = aws_iam_instance_profile.ec2_profile.arn
+  instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name           = aws_key_pair.ssh_key.key_name 
   root_volume_size   = each.value.root_vol_size
   ebs_volume_size    = each.value.ebs_vol_size
@@ -252,7 +253,7 @@ resource "aws_route53_record" "elasticsearch_api_dns" {
 }
 
 resource "aws_s3_bucket" "elastic_snapshots" {
-  bucket        = var.snapshot_bucket_name
+  bucket        = "${var.snapshot_bucket_name}-${data.aws_caller_identity.current.account_id}"
   force_destroy = false
 }
 
